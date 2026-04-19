@@ -1,8 +1,3 @@
-# ================================================
-# IY499 Practical Programming Assignment
-# Student Stress Support System
-# ================================================
-
 import tkinter as tk
 from tkinter import ttk
 import csv
