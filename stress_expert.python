@@ -34,7 +34,7 @@ def evaluate_stress(data):
     suggestions = []
     reasons = []
 
-    # Academic / life pressure factors
+    # Academic / life pressure factors calculate score 
     if data['sleep'] < 5 and data['workload'] == "High":
         score += 4
         suggestions.append("You have high workload and low sleep — prioritise rest and reduce task load.")
@@ -44,6 +44,7 @@ def evaluate_stress(data):
         suggestions.append("Improve sleep (7-8 hours).")
         reasons.append("Low sleep")
 
+    #exam stress evaluation 
     if data['exams'] == "Yes":
         if data['confidence'] == "Low":
             score += 3
@@ -58,6 +59,7 @@ def evaluate_stress(data):
             suggestions.append("Focus on refining weak areas and exam techniques.")
             reasons.append("Exams + high confidence")
 
+    #financial and workload evaluation 
     if data['financial'] == "High" and data['job_hours'] > 20:
         score += 3
         suggestions.append("High financial stress and long work hours — consider balancing work and study more carefully.")
@@ -81,6 +83,7 @@ def evaluate_stress(data):
         suggestions.append("Long working hours may affect study — consider reducing if possible.")
         reasons.append("High job hours")
 
+    #final logic checks 
     if data['exams'] != "Yes" and data['confidence'] == "Low":
         score += 1
         suggestions.append("Build confidence through small achievable study goals.")
@@ -167,19 +170,19 @@ class StressApp:
         self.root.geometry("800x700")
         self.root.configure(bg="#eaf2f8")
 
-        tk.Label(root, text="Student Stress Support System", 
-                 font=("Helvetica", 18, "bold"), bg="#eaf2f8").pack(pady=10)
-
+        #main layout setup 
+        tk.Label(root, text="Student Stress Support System", font=("Helvetica", 18, "bold"), bg="#eaf2f8").pack(pady=10)
         container = tk.Frame(root, bg="#eaf2f8")
         container.pack(fill="both", expand=True, padx=20)
 
+        #left and right sections 
         left = tk.Frame(container, bg="#ffffff", bd=2, relief="groove")
         left.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
         right = tk.Frame(container, bg="#ffffff", bd=2, relief="groove")
         right.pack(side="right", fill="both", expand=True, padx=10, pady=10)
 
-        # Inputs
+        #input widgets setup 
         self.sleep = self.create_input(left, "Sleep Hours")
         self.workload = self.create_combo(left, "Workload", ["Low", "Medium", "High"])
         self.exams = self.create_combo(left, "Exams", ["Yes", "No"])
@@ -188,11 +191,14 @@ class StressApp:
         self.deadline = self.create_combo(left, "Deadline Pressure", ["Low", "Medium", "High"])
         self.job_hours = self.create_input(left, "Job Hours/week")
 
+        #text input fields for qualitative data 
         tk.Label(left, text="Describe your feelings", bg="#ffffff").pack(anchor='w', padx=10)
         self.mental_text = tk.Entry(left)
         self.mental_text.pack(fill='x', padx=10, pady=5)
 
         tk.Label(left, text="Your own coping strategy (optional)", bg="#ffffff").pack(anchor='w', padx=10)
+
+        #output box for displaying results 
         self.custom_solution = tk.Entry(left)
         self.custom_solution.pack(fill='x', padx=10, pady=5)
 
