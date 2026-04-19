@@ -27,3 +27,86 @@ def mental_health_analysis(text):
         detected.append("no")
 
     return suggestions, detected
+
+def evaluate_stress(data):
+    score = 0
+    suggestions = []
+    reasons = []
+
+    # Academic / life pressure factors (CONTEXT-AWARE RULES)
+
+    # Sleep + workload interaction
+    if data['sleep'] < 5 and data['workload'] == "High":
+        score += 4
+        suggestions.append("You have high workload and low sleep — prioritise rest and reduce task load.")
+        reasons.append("Low sleep + high workload")
+    elif data['sleep'] < 5:
+        score += 3
+        suggestions.append("Improve sleep (7-8 hours).")
+        reasons.append("Low sleep")
+
+    # Exams + confidence interaction
+    if data['exams'] == "Yes":
+        if data['confidence'] == "Low":
+            score += 3
+            suggestions.append("Start with simple revision to rebuild confidence before doing harder tasks.")
+            reasons.append("Exams + low confidence")
+        elif data['confidence'] == "Medium":
+            score += 2
+            suggestions.append("Use structured revision and some past papers to prepare.")
+            reasons.append("Exams + medium confidence")
+        else:
+            score += 1
+            suggestions.append("Focus on refining weak areas and exam techniques.")
+            reasons.append("Exams + high confidence")
+
+    # Financial + job interaction
+    if data['financial'] == "High" and data['job_hours'] > 20:
+        score += 3
+        suggestions.append("High financial stress and long work hours — consider balancing work and study more carefully.")
+        reasons.append("Financial stress + high job hours")
+    elif data['financial'] == "High":
+        score += 2
+        suggestions.append("Plan your budget and seek financial advice.")
+        reasons.append("Financial stress")
+
+    # Deadline + workload interaction
+    if data['deadline'] == "High" and data['workload'] == "High":
+        score += 3
+        suggestions.append("High workload and deadline pressure — break tasks into smaller steps and prioritise urgently.")
+        reasons.append("Deadline + workload pressure")
+    elif data['deadline'] == "High":
+        score += 2
+        suggestions.append("Break deadlines into manageable tasks.")
+        reasons.append("Deadline pressure")
+
+    # Job hours alone
+    if data['job_hours'] > 20 and data['financial'] != "High":
+        score += 2
+        suggestions.append("Long working hours may affect study — consider reducing if possible.")
+        reasons.append("High job hours")
+
+    # Confidence alone (only if no exam rule triggered it)
+    if data['exams'] != "Yes" and data['confidence'] == "Low":
+        score += 1
+        suggestions.append("Build confidence through small achievable study goals.")
+        reasons.append("Low confidence")
+
+    # Mental health handled INDEPENDENTLY
+    mh_suggestions, detected = mental_health_analysis(data['mental_text'])
+
+    # Always include mental health suggestions regardless of score
+    suggestions.extend(mh_suggestions)
+
+    if detected:
+        reasons.append("Mental state detected: " + ", ".join(detected))
+
+    # Stress level ONLY based on pressure factors
+    if score >= 10:
+        level = "HIGH"
+    elif score >= 5:
+        level = "MODERATE"
+    else:
+        level = "LOW"
+
+    return level, suggestions, reasons
