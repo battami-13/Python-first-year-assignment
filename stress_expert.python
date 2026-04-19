@@ -3,7 +3,7 @@ from tkinter import ttk
 import csv
 from datetime import datetime
 
-# -------------------- Expert System Logic --------------------
+#expert System Logic 
 def mental_health_analysis(text):
     text = text.lower()
     suggestions = []
@@ -106,7 +106,7 @@ def evaluate_stress(data):
     return level, suggestions, reasons
 
 
-# -------------------- CSV File Handling --------------------
+#csv function
 def save_to_csv(data, level, suggestions, reasons, custom):
     filename = "stress_logs.csv"
     fieldnames = ['timestamp', 'sleep', 'workload', 'exams', 'confidence',
@@ -162,7 +162,7 @@ def load_from_csv():
         return []
 
 
-# -------------------- Modern GUI --------------------
+#GUI design 
 class StressApp:
     def __init__(self, root):
         self.root = root
