@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
+import csv
+from datetime import datetime
 
+# -------------------- Expert System Logic --------------------
 
 def mental_health_analysis(text):
     text = text.lower()
@@ -27,6 +30,8 @@ def mental_health_analysis(text):
         detected.append("no")
 
     return suggestions, detected
+
+
 
 def evaluate_stress(data):
     score = 0
@@ -111,6 +116,68 @@ def evaluate_stress(data):
 
     return level, suggestions, reasons
 
+# -------------------- CSV File Handling --------------------
+def save_to_csv(data, level, suggestions, reasons, custom):
+    """Save evaluation to CSV (append mode)"""
+    filename = "stress_logs.csv"
+    fieldnames = [
+        'timestamp', 'sleep', 'workload', 'exams', 'confidence',
+        'financial', 'deadline', 'job_hours', 'mental_text',
+        'stress_level', 'custom_strategy'
+    ]
+
+    try:
+        # Check if file exists to write header only once
+        file_exists = False
+        try:
+            with open(filename, 'r', newline='') as f:
+                file_exists = True
+        except FileNotFoundError:
+            pass
+
+        with open(filename, 'a', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            if not file_exists:
+                writer.writeheader()
+
+            row = {
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'sleep': data['sleep'],
+                'workload': data['workload'],
+                'exams': data['exams'],
+                'confidence': data['confidence'],
+                'financial': data['financial'],
+                'deadline': data['deadline'],
+                'job_hours': data['job_hours'],
+                'mental_text': data['mental_text'],
+                'stress_level': level,
+                'custom_strategy': custom
+            }
+            writer.writerow(row)
+    except Exception as e:
+        print(f"⚠️ Error saving to CSV: {e}")  # won't crash GUI
+
+
+def load_from_csv():
+    """Load all past evaluations as list of dictionaries"""
+    filename = "stress_logs.csv"
+    evaluations = []
+    try:
+        with open(filename, 'r', newline='') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                # Convert numeric fields back to correct type
+                row['sleep'] = int(row['sleep'])
+                row['job_hours'] = int(row['job_hours'])
+                evaluations.append(row)
+        return evaluations
+    except FileNotFoundError:
+        return []  # first time running is fine
+    except Exception as e:
+        print(f"⚠️ Error loading CSV: {e}")
+        return []
+# -------------------- Modern GUI --------------------
+
 class StressApp:
     def __init__(self, root):
         self.root = root
@@ -149,6 +216,12 @@ class StressApp:
         self.custom_solution.pack(fill='x', padx=10, pady=5)
 
         tk.Button(left, text="Evaluate", bg="#3498db", fg="white", command=self.run).pack(pady=15)
+        
+        # New buttons
+        tk.Button(left, text="Save to History", bg="#2ecc71", fg="white", 
+          command=self.save_current_result).pack(pady=5)
+        tk.Button(left, text="View History", bg="#f39c12", fg="white", 
+          command=self.view_history).pack(pady=5)
 
         tk.Label(right, text="Results", font=("Arial", 14, "bold"), bg="#ffffff").pack(pady=10)
 
@@ -168,7 +241,7 @@ class StressApp:
         combo.pack(fill='x', padx=10, pady=5)
         return combo
 
-    def run(self):
+     def run(self):
         try:
             data = {
                 'sleep': int(self.sleep.get()),
@@ -183,14 +256,13 @@ class StressApp:
 
             level, suggestions, reasons = evaluate_stress(data)
 
+            # === DISPLAY RESULTS ===
             self.result_box.delete(1.0, tk.END)
             self.result_box.insert(tk.END, f"Stress Level (Pressure-Based): {level}\n\n")
-
             self.result_box.insert(tk.END, "Suggestions:\n")
             for s in suggestions:
                 self.result_box.insert(tk.END, f"- {s}\n")
 
-            # Add user's own solution
             custom = self.custom_solution.get().strip()
             if custom:
                 self.result_box.insert(tk.END, f"\nYour Strategy:\n- {custom}\n")
@@ -199,20 +271,68 @@ class StressApp:
             for r in reasons:
                 self.result_box.insert(tk.END, f"- {r}\n")
 
+            # === AUTO SAVE TO CSV ===
+            save_to_csv(data, level, suggestions, reasons, custom)
+
+        except ValueError:
+            self.result_box.delete(1.0, tk.END)
+            self.result_box.insert(tk.END, "❌ Invalid input.\nPlease enter numbers for Sleep and Job Hours.")
+        except Exception as e:
+            self.result_box.delete(1.0, tk.END)
+            
+        def save_current_result(self):
+        """Manual save button (in case you want to save without re-evaluating)"""
+        try:
+            data = {
+                'sleep': int(self.sleep.get()),
+                'workload': self.workload.get(),
+                'exams': self.exams.get(),
+                'confidence': self.confidence.get(),
+                'financial': self.financial.get(),
+                'deadline': self.deadline.get(),
+                'job_hours': int(self.job_hours.get()),
+                'mental_text': self.mental_text.get()
+            }
+            # Dummy values for manual save
+            level = "MANUAL"
+            suggestions = ["Saved manually by user"]
+            reasons = ["User requested save"]
+            custom = self.custom_solution.get().strip()
+            save_to_csv(data, level, suggestions, reasons, custom)
+            self.result_box.delete(1.0, tk.END)
+            self.result_box.insert(tk.END, "Current inputs saved to history!")
         except:
             self.result_box.delete(1.0, tk.END)
-            self.result_box.insert(tk.END, "Invalid input. Please check values.")
+            self.result_box.insert(tk.END, " Cannot save — check input values.")
 
+    def view_history(self):
+        """Load CSV + sort by date (demonstrates sorting algorithm)"""
+        evals = load_from_csv()
+        if not evals:
+            self.result_box.delete(1.0, tk.END)
+            self.result_box.insert(tk.END, "📂 No history yet.\nEvaluate something first!")
+            return
+
+        # SORTING ALGORITHM (most recent first)
+        evals.sort(key=lambda x: x['timestamp'], reverse=True)
+
+        self.result_box.delete(1.0, tk.END)
+        self.result_box.insert(tk.END, "📊 STRESS HISTORY (Newest first)\n")
+        self.result_box.insert(tk.END, "="*50 + "\n\n")
+
+        for entry in evals:
+            self.result_box.insert(tk.END,
+                f"🗓 {entry['timestamp']}\n"
+                f"🔥 Stress Level: {entry['stress_level']}\n"
+                f"💤 Sleep: {entry['sleep']}h | 💼 Job: {entry['job_hours']}h\n"
+                f"💭 Feeling: {entry['mental_text'][:80]}...\n"
+                f"{'─'*40}\n\n"
+            )
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = StressApp(root)
     root.mainloop()
-
-
-
-
-
 
 
 
