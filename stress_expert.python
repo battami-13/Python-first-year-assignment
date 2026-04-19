@@ -1,16 +1,19 @@
+# ================================================
+# IY499 Practical Programming Assignment
+# Student Stress Support System
+# ================================================
+
 import tkinter as tk
 from tkinter import ttk
 import csv
 from datetime import datetime
 
 # -------------------- Expert System Logic --------------------
-
 def mental_health_analysis(text):
     text = text.lower()
     suggestions = []
     detected = []
-
-    if "anxiety" or "anxious" in text:
+    if "anxiety" in text or "anxious" in text:
         suggestions.append("Meditation is one of the best solution. Try more!")
         detected.append("anxiety")
     if "depress" in text or "depres" in text or "sad" in text or "sadness" in text:
@@ -28,9 +31,7 @@ def mental_health_analysis(text):
     if "no" in text:
         suggestions.append("You are doing so well in your life!!")
         detected.append("no")
-
     return suggestions, detected
-
 
 
 def evaluate_stress(data):
@@ -38,9 +39,7 @@ def evaluate_stress(data):
     suggestions = []
     reasons = []
 
-    # Academic / life pressure factors (CONTEXT-AWARE RULES)
-
-    # Sleep + workload interaction
+    # Academic / life pressure factors
     if data['sleep'] < 5 and data['workload'] == "High":
         score += 4
         suggestions.append("You have high workload and low sleep — prioritise rest and reduce task load.")
@@ -50,7 +49,6 @@ def evaluate_stress(data):
         suggestions.append("Improve sleep (7-8 hours).")
         reasons.append("Low sleep")
 
-    # Exams + confidence interaction
     if data['exams'] == "Yes":
         if data['confidence'] == "Low":
             score += 3
@@ -65,7 +63,6 @@ def evaluate_stress(data):
             suggestions.append("Focus on refining weak areas and exam techniques.")
             reasons.append("Exams + high confidence")
 
-    # Financial + job interaction
     if data['financial'] == "High" and data['job_hours'] > 20:
         score += 3
         suggestions.append("High financial stress and long work hours — consider balancing work and study more carefully.")
@@ -75,7 +72,6 @@ def evaluate_stress(data):
         suggestions.append("Plan your budget and seek financial advice.")
         reasons.append("Financial stress")
 
-    # Deadline + workload interaction
     if data['deadline'] == "High" and data['workload'] == "High":
         score += 3
         suggestions.append("High workload and deadline pressure — break tasks into smaller steps and prioritise urgently.")
@@ -85,28 +81,23 @@ def evaluate_stress(data):
         suggestions.append("Break deadlines into manageable tasks.")
         reasons.append("Deadline pressure")
 
-    # Job hours alone
     if data['job_hours'] > 20 and data['financial'] != "High":
         score += 2
         suggestions.append("Long working hours may affect study — consider reducing if possible.")
         reasons.append("High job hours")
 
-    # Confidence alone (only if no exam rule triggered it)
     if data['exams'] != "Yes" and data['confidence'] == "Low":
         score += 1
         suggestions.append("Build confidence through small achievable study goals.")
         reasons.append("Low confidence")
 
-    # Mental health handled INDEPENDENTLY
+    # Mental health analysis (always included)
     mh_suggestions, detected = mental_health_analysis(data['mental_text'])
-
-    # Always include mental health suggestions regardless of score
     suggestions.extend(mh_suggestions)
-
     if detected:
         reasons.append("Mental state detected: " + ", ".join(detected))
 
-    # Stress level ONLY based on pressure factors
+    # Final stress level
     if score >= 10:
         level = "HIGH"
     elif score >= 5:
@@ -116,18 +107,15 @@ def evaluate_stress(data):
 
     return level, suggestions, reasons
 
+
 # -------------------- CSV File Handling --------------------
 def save_to_csv(data, level, suggestions, reasons, custom):
-    """Save evaluation to CSV (append mode)"""
     filename = "stress_logs.csv"
-    fieldnames = [
-        'timestamp', 'sleep', 'workload', 'exams', 'confidence',
-        'financial', 'deadline', 'job_hours', 'mental_text',
-        'stress_level', 'custom_strategy'
-    ]
+    fieldnames = ['timestamp', 'sleep', 'workload', 'exams', 'confidence',
+                  'financial', 'deadline', 'job_hours', 'mental_text',
+                  'stress_level', 'custom_strategy']
 
     try:
-        # Check if file exists to write header only once
         file_exists = False
         try:
             with open(filename, 'r', newline='') as f:
@@ -155,37 +143,37 @@ def save_to_csv(data, level, suggestions, reasons, custom):
             }
             writer.writerow(row)
     except Exception as e:
-        print(f"⚠️ Error saving to CSV: {e}")  # won't crash GUI
+        print(f"⚠️ Error saving to CSV: {e}")
 
 
 def load_from_csv():
-    """Load all past evaluations as list of dictionaries"""
     filename = "stress_logs.csv"
     evaluations = []
     try:
         with open(filename, 'r', newline='') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                # Convert numeric fields back to correct type
                 row['sleep'] = int(row['sleep'])
                 row['job_hours'] = int(row['job_hours'])
                 evaluations.append(row)
         return evaluations
     except FileNotFoundError:
-        return []  # first time running is fine
+        return []
     except Exception as e:
         print(f"⚠️ Error loading CSV: {e}")
         return []
-# -------------------- Modern GUI --------------------
 
+
+# -------------------- Modern GUI --------------------
 class StressApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Student Stress Expert System")
+        self.root.title("Student Stress Support System")
         self.root.geometry("800x700")
         self.root.configure(bg="#eaf2f8")
 
-        tk.Label(root, text="Student Stress Support System", font=("Helvetica", 18, "bold"), bg="#eaf2f8").pack(pady=10)
+        tk.Label(root, text="Student Stress Support System", 
+                 font=("Helvetica", 18, "bold"), bg="#eaf2f8").pack(pady=10)
 
         container = tk.Frame(root, bg="#eaf2f8")
         container.pack(fill="both", expand=True, padx=20)
@@ -196,37 +184,39 @@ class StressApp:
         right = tk.Frame(container, bg="#ffffff", bd=2, relief="groove")
         right.pack(side="right", fill="both", expand=True, padx=10, pady=10)
 
-        tk.Label(left, text="Input", font=("Arial", 14, "bold"), bg="#ffffff").pack(pady=10)
-
+        # Inputs
         self.sleep = self.create_input(left, "Sleep Hours")
-        self.workload = self.create_combo(left, "Workload", ["Low","Medium","High"])
-        self.exams = self.create_combo(left, "Exams", ["Yes","No"])
-        self.confidence = self.create_combo(left, "Confidence", ["High","Medium","Low"])
-        self.financial = self.create_combo(left, "Financial Stress", ["Low","Medium","High"])
-        self.deadline = self.create_combo(left, "Deadline Pressure", ["Low","Medium","High"])
+        self.workload = self.create_combo(left, "Workload", ["Low", "Medium", "High"])
+        self.exams = self.create_combo(left, "Exams", ["Yes", "No"])
+        self.confidence = self.create_combo(left, "Confidence", ["High", "Medium", "Low"])
+        self.financial = self.create_combo(left, "Financial Stress", ["Low", "Medium", "High"])
+        self.deadline = self.create_combo(left, "Deadline Pressure", ["Low", "Medium", "High"])
         self.job_hours = self.create_input(left, "Job Hours/week")
 
         tk.Label(left, text="Describe your feelings", bg="#ffffff").pack(anchor='w', padx=10)
         self.mental_text = tk.Entry(left)
         self.mental_text.pack(fill='x', padx=10, pady=5)
 
-        # NEW: Custom solution input
         tk.Label(left, text="Your own coping strategy (optional)", bg="#ffffff").pack(anchor='w', padx=10)
         self.custom_solution = tk.Entry(left)
         self.custom_solution.pack(fill='x', padx=10, pady=5)
 
-        tk.Button(left, text="Evaluate", bg="#3498db", fg="white", command=self.run).pack(pady=15)
-        
-        # New buttons
-        tk.Button(left, text="Save to History", bg="#2ecc71", fg="white", 
-          command=self.save_current_result).pack(pady=5)
-        tk.Button(left, text="View History", bg="#f39c12", fg="white", 
-          command=self.view_history).pack(pady=5)
+        # Corrected Buttons (No bg/fg parameters for ttk.Button)
+        ttk.Button(left, text="Evaluate", command=self.run).pack(pady=10)
+        ttk.Button(left, text="Save to History", command=self.save_current_result).pack(pady=5)
+        ttk.Button(left, text="View History", command=self.view_history).pack(pady=5)
 
+        # Right side - Results
         tk.Label(right, text="Results", font=("Arial", 14, "bold"), bg="#ffffff").pack(pady=10)
-
         self.result_box = tk.Text(right, height=25, wrap='word')
         self.result_box.pack(fill="both", expand=True, padx=10, pady=10)
+
+    def get_int_input(self, entry_widget):
+        val = entry_widget.get().strip()
+        try:
+            return int(val)
+        except ValueError:
+            return 0
 
     def create_input(self, parent, label):
         tk.Label(parent, text=label, bg="#ffffff").pack(anchor='w', padx=10)
@@ -236,106 +226,66 @@ class StressApp:
 
     def create_combo(self, parent, label, values):
         tk.Label(parent, text=label, bg="#ffffff").pack(anchor='w', padx=10)
-        combo = ttk.Combobox(parent, values=values)
+        combo = ttk.Combobox(parent, values=values, state="readonly")
         combo.current(0)
         combo.pack(fill='x', padx=10, pady=5)
         return combo
 
-     def run(self):
-        try:
-            data = {
-                'sleep': int(self.sleep.get()),
-                'workload': self.workload.get(),
-                'exams': self.exams.get(),
-                'confidence': self.confidence.get(),
-                'financial': self.financial.get(),
-                'deadline': self.deadline.get(),
-                'job_hours': int(self.job_hours.get()),
-                'mental_text': self.mental_text.get()
-            }
-
-            level, suggestions, reasons = evaluate_stress(data)
-
-            # === DISPLAY RESULTS ===
-            self.result_box.delete(1.0, tk.END)
-            self.result_box.insert(tk.END, f"Stress Level (Pressure-Based): {level}\n\n")
-            self.result_box.insert(tk.END, "Suggestions:\n")
-            for s in suggestions:
-                self.result_box.insert(tk.END, f"- {s}\n")
-
-            custom = self.custom_solution.get().strip()
-            if custom:
-                self.result_box.insert(tk.END, f"\nYour Strategy:\n- {custom}\n")
-
-            self.result_box.insert(tk.END, "\nReasoning:\n")
-            for r in reasons:
-                self.result_box.insert(tk.END, f"- {r}\n")
-
-            # === AUTO SAVE TO CSV ===
-            save_to_csv(data, level, suggestions, reasons, custom)
-
-        except ValueError:
-            self.result_box.delete(1.0, tk.END)
-            self.result_box.insert(tk.END, "❌ Invalid input.\nPlease enter numbers for Sleep and Job Hours.")
-        except Exception as e:
-            self.result_box.delete(1.0, tk.END)
+    def run(self):
+        data = {
+            'sleep': self.get_int_input(self.sleep),
+            'workload': self.workload.get(),
+            'exams': self.exams.get(),
+            'confidence': self.confidence.get(),
+            'financial': self.financial.get(),
+            'deadline': self.deadline.get(),
+            'job_hours': self.get_int_input(self.job_hours),
+            'mental_text': self.mental_text.get()
+        }
+        level, suggestions, reasons = evaluate_stress(data)
+        
+        self.result_box.delete(1.0, tk.END)
+        self.result_box.insert(tk.END, f"Stress Level: {level}\n\nSuggestions:\n")
+        for s in suggestions:
+            self.result_box.insert(tk.END, f"- {s}\n")
+        
+        custom = self.custom_solution.get().strip()
+        if custom:
+            self.result_box.insert(tk.END, f"\nYour Strategy:\n- {custom}\n")
             
-        def save_current_result(self):
-        """Manual save button (in case you want to save without re-evaluating)"""
-        try:
-            data = {
-                'sleep': int(self.sleep.get()),
-                'workload': self.workload.get(),
-                'exams': self.exams.get(),
-                'confidence': self.confidence.get(),
-                'financial': self.financial.get(),
-                'deadline': self.deadline.get(),
-                'job_hours': int(self.job_hours.get()),
-                'mental_text': self.mental_text.get()
-            }
-            # Dummy values for manual save
-            level = "MANUAL"
-            suggestions = ["Saved manually by user"]
-            reasons = ["User requested save"]
-            custom = self.custom_solution.get().strip()
-            save_to_csv(data, level, suggestions, reasons, custom)
-            self.result_box.delete(1.0, tk.END)
-            self.result_box.insert(tk.END, "Current inputs saved to history!")
-        except:
-            self.result_box.delete(1.0, tk.END)
-            self.result_box.insert(tk.END, " Cannot save — check input values.")
+        self.result_box.insert(tk.END, "\nReasoning:\n")
+        for r in reasons:
+            self.result_box.insert(tk.END, f"- {r}\n")
+        
+        save_to_csv(data, level, suggestions, reasons, custom)
+
+    def save_current_result(self):
+        data = {
+            'sleep': self.get_int_input(self.sleep),
+            'workload': self.workload.get(),
+            'exams': self.exams.get(),
+            'confidence': self.confidence.get(),
+            'financial': self.financial.get(),
+            'deadline': self.deadline.get(),
+            'job_hours': self.get_int_input(self.job_hours),
+            'mental_text': self.mental_text.get()
+        }
+        save_to_csv(data, "MANUAL", ["Saved manually"], ["User requested save"], self.custom_solution.get().strip())
+        self.result_box.delete(1.0, tk.END)
+        self.result_box.insert(tk.END, "✅ Saved successfully!")
 
     def view_history(self):
-        """Load CSV + sort by date (demonstrates sorting algorithm)"""
         evals = load_from_csv()
         if not evals:
             self.result_box.delete(1.0, tk.END)
-            self.result_box.insert(tk.END, "📂 No history yet.\nEvaluate something first!")
+            self.result_box.insert(tk.END, "📂 No history yet.")
             return
-
-        # SORTING ALGORITHM (most recent first)
-        evals.sort(key=lambda x: x['timestamp'], reverse=True)
-
         self.result_box.delete(1.0, tk.END)
-        self.result_box.insert(tk.END, "📊 STRESS HISTORY (Newest first)\n")
-        self.result_box.insert(tk.END, "="*50 + "\n\n")
-
+        self.result_box.insert(tk.END, "📊 STRESS HISTORY\n" + "="*20 + "\n")
         for entry in evals:
-            self.result_box.insert(tk.END,
-                f"🗓 {entry['timestamp']}\n"
-                f"🔥 Stress Level: {entry['stress_level']}\n"
-                f"💤 Sleep: {entry['sleep']}h | 💼 Job: {entry['job_hours']}h\n"
-                f"💭 Feeling: {entry['mental_text'][:80]}...\n"
-                f"{'─'*40}\n\n"
-            )
+            self.result_box.insert(tk.END, f"🗓 {entry['timestamp']} | Level: {entry['stress_level']}\n")
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = StressApp(root)
     root.mainloop()
-
-
-
-
-
-
