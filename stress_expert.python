@@ -110,3 +110,112 @@ def evaluate_stress(data):
         level = "LOW"
 
     return level, suggestions, reasons
+
+class StressApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Student Stress Expert System")
+        self.root.geometry("800x700")
+        self.root.configure(bg="#eaf2f8")
+
+        tk.Label(root, text="Student Stress Support System", font=("Helvetica", 18, "bold"), bg="#eaf2f8").pack(pady=10)
+
+        container = tk.Frame(root, bg="#eaf2f8")
+        container.pack(fill="both", expand=True, padx=20)
+
+        left = tk.Frame(container, bg="#ffffff", bd=2, relief="groove")
+        left.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+
+        right = tk.Frame(container, bg="#ffffff", bd=2, relief="groove")
+        right.pack(side="right", fill="both", expand=True, padx=10, pady=10)
+
+        tk.Label(left, text="Input", font=("Arial", 14, "bold"), bg="#ffffff").pack(pady=10)
+
+        self.sleep = self.create_input(left, "Sleep Hours")
+        self.workload = self.create_combo(left, "Workload", ["Low","Medium","High"])
+        self.exams = self.create_combo(left, "Exams", ["Yes","No"])
+        self.confidence = self.create_combo(left, "Confidence", ["High","Medium","Low"])
+        self.financial = self.create_combo(left, "Financial Stress", ["Low","Medium","High"])
+        self.deadline = self.create_combo(left, "Deadline Pressure", ["Low","Medium","High"])
+        self.job_hours = self.create_input(left, "Job Hours/week")
+
+        tk.Label(left, text="Describe your feelings", bg="#ffffff").pack(anchor='w', padx=10)
+        self.mental_text = tk.Entry(left)
+        self.mental_text.pack(fill='x', padx=10, pady=5)
+
+        # NEW: Custom solution input
+        tk.Label(left, text="Your own coping strategy (optional)", bg="#ffffff").pack(anchor='w', padx=10)
+        self.custom_solution = tk.Entry(left)
+        self.custom_solution.pack(fill='x', padx=10, pady=5)
+
+        tk.Button(left, text="Evaluate", bg="#3498db", fg="white", command=self.run).pack(pady=15)
+
+        tk.Label(right, text="Results", font=("Arial", 14, "bold"), bg="#ffffff").pack(pady=10)
+
+        self.result_box = tk.Text(right, height=25, wrap='word')
+        self.result_box.pack(fill="both", expand=True, padx=10, pady=10)
+
+    def create_input(self, parent, label):
+        tk.Label(parent, text=label, bg="#ffffff").pack(anchor='w', padx=10)
+        entry = tk.Entry(parent)
+        entry.pack(fill='x', padx=10, pady=5)
+        return entry
+
+    def create_combo(self, parent, label, values):
+        tk.Label(parent, text=label, bg="#ffffff").pack(anchor='w', padx=10)
+        combo = ttk.Combobox(parent, values=values)
+        combo.current(0)
+        combo.pack(fill='x', padx=10, pady=5)
+        return combo
+
+    def run(self):
+        try:
+            data = {
+                'sleep': int(self.sleep.get()),
+                'workload': self.workload.get(),
+                'exams': self.exams.get(),
+                'confidence': self.confidence.get(),
+                'financial': self.financial.get(),
+                'deadline': self.deadline.get(),
+                'job_hours': int(self.job_hours.get()),
+                'mental_text': self.mental_text.get()
+            }
+
+            level, suggestions, reasons = evaluate_stress(data)
+
+            self.result_box.delete(1.0, tk.END)
+            self.result_box.insert(tk.END, f"Stress Level (Pressure-Based): {level}\n\n")
+
+            self.result_box.insert(tk.END, "Suggestions:\n")
+            for s in suggestions:
+                self.result_box.insert(tk.END, f"- {s}\n")
+
+            # Add user's own solution
+            custom = self.custom_solution.get().strip()
+            if custom:
+                self.result_box.insert(tk.END, f"\nYour Strategy:\n- {custom}\n")
+
+            self.result_box.insert(tk.END, "\nReasoning:\n")
+            for r in reasons:
+                self.result_box.insert(tk.END, f"- {r}\n")
+
+        except:
+            self.result_box.delete(1.0, tk.END)
+            self.result_box.insert(tk.END, "Invalid input. Please check values.")
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = StressApp(root)
+    root.mainloop()
+
+
+
+
+
+
+
+
+
+
+
