@@ -1,0 +1,29 @@
+import tkinter as tk
+from tkinter import ttk
+
+
+def mental_health_analysis(text):
+    text = text.lower()
+    suggestions = []
+    detected = []
+
+    if "anxiety" or "anxious" in text:
+        suggestions.append("Meditation is one of the best solution. Try more!")
+        detected.append("anxiety")
+    if "depress" in text or "depres" in text or "sad" in text or "sadness" in text:
+        suggestions.append("You may talk to peers or counsellor, or would you want to have a chat with me?")
+        detected.append("depression")
+    if "stress" in text:
+        suggestions.append("You should have a better work-life balance, for real, or do you wanna have a chat with me?")
+        detected.append("stress")
+    if "tired" in text or "exhaust" in text:
+        suggestions.append("Take a nap, trust me. Come back when you awake and you can tell me what's going on.")
+        detected.append("fatigue")
+    if "overwhelm" in text:
+        suggestions.append("First, break down the stuff you have to do in small pieces. DON'T stress yourself out. Or you can tell me and I will help you to break it down.")
+        detected.append("overwhelm")
+    if "no" in text:
+        suggestions.append("You are doing so well in your life!!")
+        detected.append("no")
+
+    return suggestions, detected
